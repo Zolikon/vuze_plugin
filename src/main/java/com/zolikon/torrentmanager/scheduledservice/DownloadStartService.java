@@ -9,47 +9,40 @@ import com.mongodb.client.model.Filters;
 import com.zolikon.torrentmanager.MongoConfiguration;
 import com.zolikon.torrentmanager.ScheduledService;
 import com.zolikon.torrentmanager.Service;
+import com.zolikon.torrentmanager.dao.TorrentDao;
+import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.gudy.azureus2.plugins.download.DownloadManager;
 
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @ScheduledService
 public class DownloadStartService extends AbstractScheduledService implements Service{
 
-    public static final String PROCESSED = "processed";
-    public static final String ID = "_id";
+    private static final Logger LOG = Logger.getLogger(DownloadStartService.class);
+
     private final DownloadManager downloadManager;
-    private final MongoConfiguration mongoConfiguration;
-    private MongoCollection<Document> collection;
+    private final TorrentDao torrentDao;
 
     @Inject
-    public DownloadStartService(DownloadManager downloadManager) {
+    public DownloadStartService(DownloadManager downloadManager, TorrentDao torrentDao) {
         this.downloadManager = downloadManager;
-        this.mongoConfiguration = new MongoConfiguration();
-        try {
-            connectToDb();
-        } catch (Exception exc) {
-
-        }
+        this.torrentDao = torrentDao;
     }
 
     protected void runOneIteration() throws Exception {
-        if (collection == null) {
-            connectToDb();
-        }
         try {
-            FindIterable<Document> iterable = collection.find(Filters.eq(PROCESSED, false));
-            for (Document doc : iterable) {
-                String url = doc.getString("url");
-                Object id = doc.get(ID);
+            List<Document> documentList = torrentDao.getUnprocessedDownloads();
+            for (Document doc : documentList) {
+                String url = doc.get("url").toString();
                 downloadManager.addDownload(new URL(url), true);
-                doc.append(PROCESSED, true);
-                collection.replaceOne(Filters.eq(ID, id), doc);
+                torrentDao.changeProcessedStatus(url);
+                LOG.info("Download "+doc.get("Name") +" added");
             }
         } catch (Exception exc) {
-            collection = null;
+            LOG.error("exception during adding download",exc);
         }
     }
 
@@ -57,14 +50,9 @@ public class DownloadStartService extends AbstractScheduledService implements Se
         return Scheduler.newFixedRateSchedule(5, 60, TimeUnit.SECONDS);
     }
 
-    private void connectToDb() {
-
-        MongoClient client = new MongoClient(mongoConfiguration.getMongoHost());
-        collection = client.getDatabase(mongoConfiguration.getDatabaseName()).getCollection(mongoConfiguration.getCollectionName());
-    }
-
     public void startService() {
         startAsync();
+        LOG.info("service started");
     }
 
     public void stopService() {

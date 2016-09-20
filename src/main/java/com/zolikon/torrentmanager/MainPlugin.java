@@ -34,7 +34,6 @@ public class MainPlugin implements Plugin {
 
             @Override
             public void configure(Binder binder) {
-
             }
         }
         return Guice.createInjector(new ProductionModule());
