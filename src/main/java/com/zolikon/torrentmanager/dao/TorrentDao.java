@@ -23,7 +23,6 @@ public class TorrentDao {
 
     public static final String PROCESSED = "processed";
     public static final Document UPDATE_QUERY = new Document("$set", new Document(PROCESSED, true));
-    public static final String ID = "_id";
     public static final String URL = "url";
 
     private MongoConfiguration mongoConfiguration;

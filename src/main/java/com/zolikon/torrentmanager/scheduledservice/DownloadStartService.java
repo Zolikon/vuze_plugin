@@ -39,7 +39,7 @@ public class DownloadStartService extends AbstractScheduledService implements Se
                 String url = doc.get("url").toString();
                 downloadManager.addDownload(new URL(url), true);
                 torrentDao.changeProcessedStatus(url);
-                LOG.info("Download "+doc.get("Name") +" added");
+                LOG.info("Download "+doc.get("name") +" added");
             }
         } catch (Exception exc) {
             LOG.error("exception during adding download",exc);

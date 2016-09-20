@@ -41,7 +41,11 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         for(Download download:downloads){
             if(download.isComplete()){
                 download.stopDownload();
-                moveDownloadedFiles(download);
+                try{
+                    moveDownloadedFiles(download);
+                } catch (Exception exc){
+                    LOG.error("error moving file");
+                }
                 download.remove();
             }
         }
@@ -49,6 +53,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private void moveDownloadedFiles(Download download) throws IOException {
         File targetDir = new File(getTargetDirPath(download));
+        LOG.debug(targetDir.getPath());
         File sourceDir =new File(download.getSavePath());
         if(sourceDir.isDirectory()){
             File[] files = sourceDir.listFiles(filterFilesToMove());
@@ -67,9 +72,21 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         Optional<Document> optional = torrentDao.getTorrent(download.getName());
         if(optional.isPresent()){
             Document doc = optional.get();
-            Object saveFolderObject = doc.get("saveFolder");
-            if(saveFolderObject!=null){
-                String saveFolder = saveFolderObject.toString().replaceAll("/","\\\\");
+            targetDirPath = createTargetDirPath(doc);
+        }
+        LOG.debug(targetDirPath);
+        return targetDirPath;
+    }
+
+    private String createTargetDirPath(Document doc) {
+        String targetDirPath = COPY_LOCATION;
+        Object saveFolderObject = doc.get("saveFolder");
+        if(saveFolderObject!=null){
+            Boolean isAbsolutePath = doc.getBoolean("isAbsolutePath");
+            String saveFolder = saveFolderObject.toString().replaceAll("/","\\\\");
+            if(isAbsolutePath !=null&& isAbsolutePath){
+                targetDirPath=saveFolder;
+            } else {
                 targetDirPath+=saveFolder;
             }
         }
