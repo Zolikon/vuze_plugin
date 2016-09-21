@@ -73,8 +73,11 @@ public class TorrentDao {
     public Optional<Document> getTorrent(String name){
         Optional<Document> result=Optional.absent();
         try{
-            result=Optional.of(collection.find(Filters.eq("name",name)).first());
-            LOG.info(result.get());
+            Document document = collection.find(Filters.eq("name", name)).first();
+            if(document!=null) {
+                result = Optional.of(document);
+                LOG.info(result.get());
+            }
         } catch(Exception exc){
             LOG.error("database error",exc);
             connect();

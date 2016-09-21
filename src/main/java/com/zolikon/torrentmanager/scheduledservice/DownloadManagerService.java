@@ -44,7 +44,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
                 try{
                     moveDownloadedFiles(download);
                 } catch (Exception exc){
-                    LOG.error("error moving file");
+                    LOG.error("error moving file",exc);
                 }
                 download.remove();
             }
@@ -53,11 +53,12 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private void moveDownloadedFiles(Download download) throws IOException {
         File targetDir = new File(getTargetDirPath(download));
-        LOG.debug(targetDir.getPath());
         File sourceDir =new File(download.getSavePath());
+        LOG.info(targetDir.getPath());
         if(sourceDir.isDirectory()){
             File[] files = sourceDir.listFiles(filterFilesToMove());
             for(File item:files){
+                LOG.debug(item.getPath());
                 FileUtils.moveFileToDirectory(item,targetDir,true);
             }
             FileUtils.deleteDirectory(sourceDir);
@@ -74,7 +75,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             Document doc = optional.get();
             targetDirPath = createTargetDirPath(doc);
         }
-        LOG.debug(targetDirPath);
+        LOG.info(targetDirPath);
         return targetDirPath;
     }
 
@@ -87,6 +88,9 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             if(isAbsolutePath !=null&& isAbsolutePath){
                 targetDirPath=saveFolder;
             } else {
+                if(!saveFolder.startsWith("\\")){
+                    saveFolder="\\"+saveFolder;
+                }
                 targetDirPath+=saveFolder;
             }
         }
@@ -101,13 +105,14 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             @Override
             public boolean accept(File pathname) {
                 String fileName = pathname.getName();
-                return pathname.isDirectory()
+                return (pathname.isDirectory()
                         || pathname.length()> COPY_LIMIT
                         || fileName.contains(".srt")
                         || fileName.contains(".sub")
                         || fileName.contains(".pdf")
                         || fileName.contains(".epub")
-                        || fileName.contains(".mobi");
+                        || fileName.contains(".mobi"))
+                        && !fileName.contains("sample");
             }
         };
     }
