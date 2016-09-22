@@ -54,7 +54,6 @@ public class DownloadManagerService extends AbstractScheduledService implements 
     private void moveDownloadedFiles(Download download) throws IOException {
         File targetDir = new File(getTargetDirPath(download));
         File sourceDir =new File(download.getSavePath());
-        LOG.info(targetDir.getPath());
         if(sourceDir.isDirectory()){
             File[] files = sourceDir.listFiles(filterFilesToMove());
             for(File item:files){
@@ -65,7 +64,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         } else {
             FileUtils.moveFileToDirectory(sourceDir,targetDir,true);
         }
-        LOG.info(String.format("Files for download %s moved to % directory. Download removed",download.getName(),targetDir.getPath()));
+        LOG.info(String.format("Files for download %s moved to %s directory. Download removed",download.getName(),targetDir.getPath()));
     }
 
     private String getTargetDirPath(Download download) {
@@ -75,7 +74,6 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             Document doc = optional.get();
             targetDirPath = createTargetDirPath(doc);
         }
-        LOG.info(targetDirPath);
         return targetDirPath;
     }
 

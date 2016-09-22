@@ -36,10 +36,10 @@ public class TorrentDao {
 
     private void connect() {
         try{
-            LOG.info("connecting to db");
             MongoClient client = new MongoClient(mongoConfiguration.getMongoHost());
             this.collection = client.getDatabase(mongoConfiguration.getDatabaseName())
                     .getCollection(mongoConfiguration.getCollectionName());
+            LOG.info("connected to db");
         } catch (Exception exc){
             LOG.error("database error",exc);
         }
