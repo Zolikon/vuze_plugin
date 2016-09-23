@@ -23,7 +23,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private static final Logger LOG = Logger.getLogger(DownloadManagerService.class);
 
-    public static final int COPY_LIMIT = 1024 * 1024 * 50;
+    private static final int COPY_LIMIT = 1024 * 1024 * 50;
     private static final String COPY_LOCATION = "d:\\New";
     private final DownloadManager downloadManager;
     private final TorrentDao torrentDao;
@@ -55,10 +55,13 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         File targetDir = new File(getTargetDirPath(download));
         File sourceDir =new File(download.getSavePath());
         if(sourceDir.isDirectory()){
-            File[] files = sourceDir.listFiles(filterFilesToMove());
-            for(File item:files){
-                LOG.debug(item.getPath());
-                FileUtils.moveFileToDirectory(item,targetDir,true);
+            deleteUnwantedFilesFromDirectory(sourceDir);
+            for(File item:sourceDir.listFiles()){
+                if(item.isDirectory()){
+                    FileUtils.moveDirectoryToDirectory(item,targetDir,true);
+                } else {
+                    FileUtils.moveFileToDirectory(item,targetDir,true);
+                }
             }
             FileUtils.deleteDirectory(sourceDir);
         } else {
@@ -67,12 +70,29 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         LOG.info(String.format("Files for download %s moved to %s directory. Download removed",download.getName(),targetDir.getPath()));
     }
 
+    private void deleteUnwantedFilesFromDirectory(File directory) throws IOException {
+        File[] files = directory.listFiles(filterFilesToDelete());
+        for(File item:files){
+            if(item.isDirectory()){
+                deleteUnwantedFilesFromDirectory(item);
+            } else {
+                FileUtils.deleteQuietly(item);
+            }
+        }
+        if(directory.listFiles().length==0){
+            FileUtils.deleteDirectory(directory);
+        }
+    }
+
+
     private String getTargetDirPath(Download download) {
         String targetDirPath=COPY_LOCATION;
         Optional<Document> optional = torrentDao.getTorrent(download.getName());
         if(optional.isPresent()){
             Document doc = optional.get();
             targetDirPath = createTargetDirPath(doc);
+        } else {
+            targetDirPath+="\\"+download.getName()+"\\";
         }
         return targetDirPath;
     }
@@ -98,19 +118,18 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         return targetDirPath;
     }
 
-    private FileFilter filterFilesToMove() {
+    private FileFilter filterFilesToDelete() {
         return new FileFilter() {
             @Override
             public boolean accept(File pathname) {
                 String fileName = pathname.getName();
-                return (pathname.isDirectory()
-                        || pathname.length()> COPY_LIMIT
+                return !((pathname.length()> COPY_LIMIT
                         || fileName.contains(".srt")
                         || fileName.contains(".sub")
                         || fileName.contains(".pdf")
                         || fileName.contains(".epub")
                         || fileName.contains(".mobi"))
-                        && !fileName.contains("sample");
+                        && !fileName.contains("sample"));
             }
         };
     }
