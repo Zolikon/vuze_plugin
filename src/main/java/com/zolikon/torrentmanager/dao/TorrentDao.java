@@ -8,18 +8,11 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.zolikon.torrentmanager.MongoConfiguration;
-
-import org.apache.commons.lang3.CharSet;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.bouncycastle.util.Strings;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
