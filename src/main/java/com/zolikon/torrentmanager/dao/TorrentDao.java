@@ -9,10 +9,17 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.zolikon.torrentmanager.MongoConfiguration;
 
+import org.apache.commons.lang3.CharSet;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.bouncycastle.util.Strings;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,9 +28,9 @@ public class TorrentDao {
 
     private static final Logger LOG = Logger.getLogger(TorrentDao.class);
 
-    public static final String PROCESSED = "processed";
-    public static final Document UPDATE_QUERY = new Document("$set", new Document(PROCESSED, true));
-    public static final String URL = "url";
+    private static final String PROCESSED = "processed";
+    private static final Document UPDATE_QUERY = new Document("$set", new Document(PROCESSED, true));
+    private static final String URL = "url";
 
     private MongoConfiguration mongoConfiguration;
     private MongoCollection<Document> collection;
@@ -70,10 +77,28 @@ public class TorrentDao {
         }
     }
 
-    public Optional<Document> getTorrent(String name){
+    @Deprecated
+    public Optional<Document> getTorrentByName(String name){
+        return getTorrent(Filters.eq("name", name));
+    }
+
+    public Optional<Document> getTorrentByHash(byte[] hash){
+        LOG.debug(bytesToHex(hash));
+        return getTorrent(new Document("$text", new Document("$search",bytesToHex(hash))));
+    }
+
+    private String bytesToHex(byte[] hash){
+        StringBuilder builder = new StringBuilder();
+        for(byte b:hash){
+            builder.append(String.format("%02x",b));
+        }
+        return builder.toString();
+    }
+
+    private Optional<Document> getTorrent(Bson query){
         Optional<Document> result=Optional.absent();
         try{
-            Document document = collection.find(Filters.eq("name", name)).first();
+            Document document = collection.find(query).first();
             if(document!=null) {
                 result = Optional.of(document);
                 LOG.info(result.get());

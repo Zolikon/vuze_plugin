@@ -87,8 +87,9 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private String getTargetDirPath(Download download) {
         String targetDirPath=COPY_LOCATION;
-        Optional<Document> optional = torrentDao.getTorrent(download.getName());
+        Optional<Document> optional = torrentDao.getTorrentByHash(download.getTorrentHash());
         if(optional.isPresent()){
+            LOG.debug(optional.get().get("name"));
             Document doc = optional.get();
             targetDirPath = createTargetDirPath(doc);
         } else {
