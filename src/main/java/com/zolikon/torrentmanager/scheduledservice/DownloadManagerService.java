@@ -23,7 +23,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private static final Logger LOG = Logger.getLogger(DownloadManagerService.class);
 
-    private static final int COPY_LIMIT = 1024 * 1024 * 50;
+    private static final int COPY_LIMIT = 1024 * 1024 * 20;
     private static final String COPY_LOCATION = "d:\\New";
     private final DownloadManager downloadManager;
     private final TorrentDao torrentDao;
