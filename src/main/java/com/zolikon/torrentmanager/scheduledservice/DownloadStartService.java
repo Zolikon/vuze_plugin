@@ -2,11 +2,6 @@ package com.zolikon.torrentmanager.scheduledservice;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.inject.Inject;
-import com.mongodb.MongoClient;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.zolikon.torrentmanager.MongoConfiguration;
 import com.zolikon.torrentmanager.ScheduledService;
 import com.zolikon.torrentmanager.Service;
 import com.zolikon.torrentmanager.dao.TorrentDao;
