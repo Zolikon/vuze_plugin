@@ -42,7 +42,7 @@ public class TorrentDao {
                     .getCollection(mongoConfiguration.getCollectionName());
             LOG.info("connected to db");
         } catch (Exception exc) {
-            LOG.error("database error", exc);
+            LOG.error("database connection error", exc);
         }
     }
 

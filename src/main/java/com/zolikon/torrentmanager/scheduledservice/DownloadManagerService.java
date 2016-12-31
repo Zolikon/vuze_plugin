@@ -46,7 +46,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         for (Download download : downloads) {
             if (download.isComplete()) {
                 download.stopDownload();
-                if (!downloadShoudBeSkipped(download)) {
+                if (!downloadShouldBeSkipped(download)) {
                     try {
                         moveDownloadedFiles(download);
                     } catch (Exception exc) {
@@ -60,7 +60,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         }
     }
 
-    private boolean downloadShoudBeSkipped(Download download) {
+    private boolean downloadShouldBeSkipped(Download download) {
         List<Tag> tags = download.getTags();
         boolean skip = false;
         for (Tag tag : tags) {
@@ -143,7 +143,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         return new FileFilter() {
             @Override
             public boolean accept(File pathname) {
-                String fileName = pathname.getName();
+                String fileName = pathname.getName().toLowerCase();
                 return !((pathname.length() > copyLimit
                         || fileName.contains(".srt")
                         || fileName.contains(".sub")
@@ -161,7 +161,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     public void startService() {
         startAsync();
-        LOG.info("service started");
+        LOG.info("Download manager service started");
     }
 
     public void stopService() {

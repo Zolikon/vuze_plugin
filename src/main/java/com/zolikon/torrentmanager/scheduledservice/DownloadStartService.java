@@ -47,7 +47,7 @@ public class DownloadStartService extends AbstractScheduledService implements Se
 
     public void startService() {
         startAsync();
-        LOG.info("service started");
+        LOG.info("Download starter service started");
     }
 
     public void stopService() {
