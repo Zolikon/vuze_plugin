@@ -2,7 +2,6 @@ package com.zolikon.torrentmanager.scheduledservice;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.inject.Inject;
-import com.zolikon.torrentmanager.ScheduledService;
 import com.zolikon.torrentmanager.Service;
 import com.zolikon.torrentmanager.dao.TorrentDao;
 import org.apache.log4j.Logger;
@@ -22,7 +21,7 @@ public class DownloadStartService extends AbstractScheduledService implements Se
     private final TorrentDao torrentDao;
 
     @Inject
-    public DownloadStartService(DownloadManager downloadManager, TorrentDao torrentDao) {
+    DownloadStartService(DownloadManager downloadManager, TorrentDao torrentDao) {
         this.downloadManager = downloadManager;
         this.torrentDao = torrentDao;
     }

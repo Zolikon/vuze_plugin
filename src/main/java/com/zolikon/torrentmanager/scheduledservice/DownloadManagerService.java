@@ -3,10 +3,10 @@ package com.zolikon.torrentmanager.scheduledservice;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.inject.Inject;
-import com.zolikon.torrentmanager.PluginConfiguration;
-import com.zolikon.torrentmanager.ScheduledService;
 import com.zolikon.torrentmanager.Service;
 import com.zolikon.torrentmanager.dao.TorrentDao;
+import com.zolikon.torrentmanager.notifier.NotificationService;
+import com.zolikon.torrentmanager.registry.PluginConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.bson.Document;
@@ -29,15 +29,17 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private final DownloadManager downloadManager;
     private final TorrentDao torrentDao;
+    private final NotificationService notificationService;
     private final String copyLocation;
     private final long copyLimit;
 
     @Inject
-    public DownloadManagerService(DownloadManager downloadManager, TorrentDao torrentDao, PluginConfiguration pluginConfiguration) {
+    DownloadManagerService(DownloadManager downloadManager, TorrentDao torrentDao, PluginConfiguration pluginConfiguration,NotificationService notificationService) {
         this.downloadManager = downloadManager;
         this.torrentDao = torrentDao;
         this.copyLocation = pluginConfiguration.getCopyLocation();
         this.copyLimit = pluginConfiguration.getCopyLimit();
+        this.notificationService = notificationService;
     }
 
 
@@ -46,7 +48,8 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         for (Download download : downloads) {
             if (download.isComplete()) {
                 download.stopDownload();
-                if (!downloadShouldBeSkipped(download)) {
+                boolean downloadShouldBeSkipped = downloadShouldBeSkipped(download);
+                if (!downloadShouldBeSkipped) {
                     try {
                         moveDownloadedFiles(download);
                     } catch (Exception exc) {
@@ -54,6 +57,10 @@ public class DownloadManagerService extends AbstractScheduledService implements 
                     }
                 } else {
                     LOG.info(String.format("Torrent named %s marked as skip, no copy/delete will happen", download.getName()));
+                }
+                if (!downloadShouldBeSkipped) {
+                    String message = String.format("%s download is finished", download.getName());
+                    notificationService.sendNotification(message);
                 }
                 download.remove();
             }

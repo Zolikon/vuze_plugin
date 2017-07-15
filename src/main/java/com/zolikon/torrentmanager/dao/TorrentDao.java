@@ -7,7 +7,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
-import com.zolikon.torrentmanager.PluginConfiguration;
+import com.zolikon.torrentmanager.registry.PluginConfiguration;
 import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -30,20 +30,9 @@ public class TorrentDao {
     private MongoCollection<Document> collection;
 
     @Inject
-    public TorrentDao(PluginConfiguration mongoConfiguration) {
+    TorrentDao(PluginConfiguration mongoConfiguration) {
         this.mongoConfiguration = mongoConfiguration;
         connect();
-    }
-
-    private void connect() {
-        try {
-            MongoClient client = new MongoClient(mongoConfiguration.getMongoHost());
-            this.collection = client.getDatabase(mongoConfiguration.getDatabaseName())
-                    .getCollection(mongoConfiguration.getCollectionName());
-            LOG.info("connected to db");
-        } catch (Exception exc) {
-            LOG.error("database connection error", exc);
-        }
     }
 
     public List<Document> getUnprocessedDownloads() {
@@ -57,7 +46,6 @@ public class TorrentDao {
             return result;
         } catch (Exception exc) {
             LOG.error("database error", exc);
-            connect();
             return Collections.emptyList();
         }
     }
@@ -67,17 +55,27 @@ public class TorrentDao {
             collection.updateOne(Filters.eq(URL, url), createUpdateQuery());
         } catch (Exception exc) {
             LOG.error("database error", exc);
-            connect();
         }
-    }
-
-    private Document createUpdateQuery() {
-        return new Document("$set", new Document(PROCESSED, true).append(PROCESSED_DATE_TIME, new Date()));
     }
 
     public Optional<Document> getTorrentByHash(byte[] hash) {
         LOG.debug(bytesToHex(hash));
         return getTorrent(new Document("$text", new Document("$search", bytesToHex(hash))));
+    }
+
+    private void connect() {
+        try {
+            MongoClient client = new MongoClient(mongoConfiguration.getMongoHost());
+            this.collection = client.getDatabase(mongoConfiguration.getDatabaseName())
+                    .getCollection(mongoConfiguration.getCollectionName());
+            LOG.info("connected to db");
+        } catch (Exception exc) {
+            LOG.error("database connection error", exc);
+        }
+    }
+
+    private Document createUpdateQuery() {
+        return new Document("$set", new Document(PROCESSED, true).append(PROCESSED_DATE_TIME, new Date()));
     }
 
     private String bytesToHex(byte[] hash) {
@@ -98,7 +96,6 @@ public class TorrentDao {
             }
         } catch (Exception exc) {
             LOG.error("database error", exc);
-            connect();
         }
         return result;
     }
