@@ -60,7 +60,7 @@ public class TorrentDao {
 
     public Optional<Document> getTorrentByHash(byte[] hash) {
         LOG.debug(bytesToHex(hash));
-        return getTorrent(new Document("$text", new Document("$search", bytesToHex(hash))));
+        return getTorrent(new Document("url", new Document("$regex", bytesToHex(hash))));
     }
 
     private void connect() {

@@ -26,6 +26,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
 
     private static final Logger LOG = Logger.getLogger(DownloadManagerService.class);
     private static final String SKIP_TAG = "SKIP";
+    public static final String PATH_SEPARATOR = "\\";
 
     private final DownloadManager downloadManager;
     private final TorrentDao torrentDao;
@@ -34,7 +35,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
     private final long copyLimit;
 
     @Inject
-    DownloadManagerService(DownloadManager downloadManager, TorrentDao torrentDao, PluginConfiguration pluginConfiguration,NotificationService notificationService) {
+    DownloadManagerService(DownloadManager downloadManager, TorrentDao torrentDao, PluginConfiguration pluginConfiguration, NotificationService notificationService) {
         this.downloadManager = downloadManager;
         this.torrentDao = torrentDao;
         this.copyLocation = pluginConfiguration.getCopyLocation();
@@ -48,7 +49,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         for (Download download : downloads) {
             if (download.isComplete()) {
                 download.stopDownload();
-                boolean downloadShouldBeSkipped = downloadShouldBeSkipped(download);
+                boolean downloadShouldBeSkipped = isMarkedSkip(download) || isUpdate(download);
                 if (!downloadShouldBeSkipped) {
                     try {
                         moveDownloadedFiles(download);
@@ -56,7 +57,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
                         LOG.error("error moving file", exc);
                     }
                 } else {
-                    LOG.info(String.format("Torrent named %s marked as skip, no copy/delete will happen", download.getName()));
+                    LOG.info(String.format("Torrent named %s is marked as skip, no copy/delete will happen", download.getName()));
                 }
                 if (!downloadShouldBeSkipped) {
                     String message = String.format("%s download is finished", download.getName());
@@ -67,7 +68,10 @@ public class DownloadManagerService extends AbstractScheduledService implements 
         }
     }
 
-    private boolean downloadShouldBeSkipped(Download download) {
+    private boolean isMarkedSkip(Download download) {
+        if(download.getName().toLowerCase().contains("vuze")){
+            return true;
+        }
         List<Tag> tags = download.getTags();
         boolean skip = false;
         for (Tag tag : tags) {
@@ -76,6 +80,10 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             }
         }
         return skip;
+    }
+
+    private boolean isUpdate(Download download) {
+        return download.getName().toLowerCase().contains("vuze");
     }
 
     private void moveDownloadedFiles(Download download) throws IOException {
@@ -120,7 +128,7 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             Document doc = optional.get();
             targetDirPath = createTargetDirPath(doc);
         } else {
-            targetDirPath += "\\" + download.getName() + "\\";
+            targetDirPath += PATH_SEPARATOR + download.getName() + PATH_SEPARATOR;
         }
         return targetDirPath;
     }
@@ -134,14 +142,14 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             if (isAbsolutePath != null && isAbsolutePath) {
                 targetDirPath = saveFolder;
             } else {
-                if (!saveFolder.startsWith("\\")) {
-                    saveFolder = "\\" + saveFolder;
+                if (!saveFolder.startsWith(PATH_SEPARATOR)) {
+                    saveFolder = PATH_SEPARATOR + saveFolder;
                 }
                 targetDirPath += saveFolder;
             }
         }
-        if (!targetDirPath.endsWith("\\")) {
-            targetDirPath += "\\";
+        if (!targetDirPath.endsWith(PATH_SEPARATOR)) {
+            targetDirPath += PATH_SEPARATOR;
         }
         return targetDirPath;
     }
@@ -152,11 +160,11 @@ public class DownloadManagerService extends AbstractScheduledService implements 
             public boolean accept(File pathname) {
                 String fileName = pathname.getName().toLowerCase();
                 return !((pathname.length() > copyLimit
-                        || fileName.contains(".srt")
-                        || fileName.contains(".sub")
-                        || fileName.contains(".pdf")
-                        || fileName.contains(".epub")
-                        || fileName.contains(".mobi"))
+                        || fileName.endsWith(".srt")
+                        || fileName.endsWith(".sub")
+                        || fileName.endsWith(".pdf")
+                        || fileName.endsWith(".epub")
+                        || fileName.endsWith(".mobi"))
                         && !fileName.contains("sample"));
             }
         };
